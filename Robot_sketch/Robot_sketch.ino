@@ -24,7 +24,41 @@ Servo Servo1;
 
 //Define motors pins
 int motor_left[] = {9, 6};
-int motor_right[] = {8, 10};
+int motor_right[] = {10, 8};
+
+enum MotorMode
+{
+	FORWARD,
+	STOP,
+	BACKWARD
+};
+
+void setMotors(MotorMode left, MotorMode right)
+{
+	MotorMode mm[] = {left, right};
+	int* motorPins[] = {motor_left, motor_right};
+
+	for(int p = 0; p < 2; p++)
+	{
+		if(mm[p] == STOP)
+		{
+			digitalWrite(motorPins[p][0], LOW);
+			digitalWrite(motorPins[p][1], LOW);
+		}
+		if(mm[p] == FORWARD)
+		{
+			digitalWrite(motorPins[p][0], HIGH);
+			digitalWrite(motorPins[p][1], LOW);
+		}
+		if(mm[p] == BACKWARD)
+		{
+			digitalWrite(motorPins[p][0], LOW);
+			digitalWrite(motorPins[p][1], HIGH);
+		}
+	}
+
+}
+
 
 //Define HC-SR04 pins
 #define trig 4
@@ -171,12 +205,24 @@ void receiveJoystickState(int count)
 
 void loop()
 {
-	int speed1 = int(float(s_joystick.m_leftRight) / float(MAX_VAL) * 255.0);
-	int speed2 = int(float(s_joystick.m_upDown) / float(MAX_VAL) * 255.0);
-	analogWrite(motor_left[0], speed1);
-	analogWrite(motor_left[1], 0);
-	analogWrite(motor_right[0], 0);
-	analogWrite(motor_right[1], speed2);
+	int x = int(float(s_joystick.m_leftRight + MAX_VAL) / float(MAX_VAL * 2) * 3);
+	int y = int(float(s_joystick.m_upDown + MAX_VAL) / float(MAX_VAL * 2) * 3);
+
+	int quadrant = x + y * 3;
+	Serial.print(quadrant);
+	switch(quadrant)
+	{
+		case 0: setMotors(STOP, FORWARD); break;
+		case 1: setMotors(FORWARD, FORWARD); break;
+		case 2: setMotors(FORWARD, STOP); break;
+		case 3: setMotors(BACKWARD, FORWARD); break;
+		case 4: setMotors(STOP, STOP); break;
+		case 5: setMotors(STOP, FORWARD); break;
+		case 6: setMotors(STOP, BACKWARD); break;
+		case 7: setMotors(BACKWARD, BACKWARD); break;
+		case 8: setMotors(BACKWARD, STOP); break;
+	}
+
 #if 0
   Serial.print("Actual Distance: ");
   int distance = read_distance();
