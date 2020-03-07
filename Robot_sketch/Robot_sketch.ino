@@ -207,7 +207,10 @@ void loop()
 {
 	int x = int(float(s_joystick.m_leftRight + MAX_VAL) / float(MAX_VAL * 2) * 3);
 	int y = int(float(s_joystick.m_upDown + MAX_VAL) / float(MAX_VAL * 2) * 3);
-
+  Serial.print("y: ");
+  Serial.println(y);
+  Serial.print("x: ");
+  Serial.println(x);
 	int quadrant = x + y * 3;
 	Serial.print(quadrant);
 	switch(quadrant)
@@ -217,7 +220,7 @@ void loop()
 		case 2: setMotors(FORWARD, STOP); break;
 		case 3: setMotors(BACKWARD, FORWARD); break;
 		case 4: setMotors(STOP, STOP); break;
-		case 5: setMotors(STOP, FORWARD); break;
+		case 5: setMotors(FORWARD, BACKWARD); break;
 		case 6: setMotors(STOP, BACKWARD); break;
 		case 7: setMotors(BACKWARD, BACKWARD); break;
 		case 8: setMotors(BACKWARD, STOP); break;
