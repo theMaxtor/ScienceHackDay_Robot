@@ -7,6 +7,16 @@
 *
 *******************************************************************************************************/
 #include <Servo.h> 
+#include <Wire.h>
+
+struct JoyState
+{
+	int32_t m_leftRight;
+	int32_t m_upDown;
+	int32_t m_button;
+} s_joystick;
+const int MAX_VAL = 512;
+int wireAddress = 9;
 
 //Define Servo Pin
 int servoPin = 7;
@@ -145,12 +155,29 @@ void setup() {
   //Put servo to the front
   Servo1.write(70);
   
+  // Hook up wire events
+  Wire.begin(wireAddress); 
+  Wire.onReceive(receiveJoystickState);
 }
 
-
+void receiveJoystickState(int count)
+{
+	char* js = (char*)&s_joystick;
+	for(int c = 0; c < count; c++)
+	{
+		js[c] = Wire.read();
+	}
+}
 
 void loop()
 {
+	int speed1 = int(float(s_joystick.m_leftRight) / float(MAX_VAL) * 255.0);
+	int speed2 = int(float(s_joystick.m_upDown) / float(MAX_VAL) * 255.0);
+	analogWrite(motor_left[0], speed1);
+	analogWrite(motor_left[1], 0);
+	analogWrite(motor_right[0], 0);
+	analogWrite(motor_right[1], speed2);
+#if 0
   Serial.print("Actual Distance: ");
   int distance = read_distance();
   Serial.println(distance);
@@ -194,5 +221,6 @@ void loop()
       }
     }
   }
+#endif
   delay(100);
 }
