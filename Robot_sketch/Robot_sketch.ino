@@ -10,6 +10,8 @@
 #include <Servo.h> 
 #include <Wire.h>
 
+int toogle = 0;
+
 struct JoyState
 {
 	int32_t m_leftRight;
@@ -172,9 +174,44 @@ void doJoystickControl()
 	}
 }
 
+void autonomouse_mode(Servo* servo)
+{
+  distance = read_distance();
+  if (distance > 20)
+  {
+    setMotors(FORWARD, FORWARD);
+  }
+  else
+  {
+    servo->write(0);
+    distance = read_distance();
+    if (distance > 20)
+    {
+      setMotors(BACKWARD, FORWARD);
+      delay(600);
+      setMotors(FORWARD, FORWARD);
+    }
+    else 
+    {
+      servo->write(170);
+      distance = read_distance();
+      if (distance > 20)
+      {
+        setMotors(FORWARD, BACKWARD);
+        delay(600);
+        setMotors(FORWARD, FORWARD);
+      }
+      else
+      {
+        setMotors(BACKWARD, BACKWARD);
+      }
+    }
+  }
+  
+}
+
 void loop()
 {
-  
 	// Toggle between self-driving and joystick control when the button is pressed
 	// defaulting to self-driving mode when we power on, in case a joystick is not connected.
 	static bool autonomousMode = true;
@@ -188,6 +225,7 @@ void loop()
 
 	if(autonomousMode)
 	{
+		autonomouse_mode(&Servo1);
 
 	}
 	else
