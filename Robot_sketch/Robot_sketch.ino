@@ -89,7 +89,7 @@ void move_servo(Servo object, int desired_angle)
   }
 }
 
-int read_distance()
+long read_distance()
 {
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
@@ -97,6 +97,7 @@ int read_distance()
 
   duration = pulseIn(echo, HIGH);
   distance = duration / 58;
+  return distance;
 }
 
 
@@ -144,6 +145,8 @@ void setup() {
   // Hook up wire events
   Wire.begin(wireAddress); 
   Wire.onReceive(receiveJoystickState);
+
+  Serial.println("GET READY");
 }
 
 void receiveJoystickState(int count)
@@ -153,6 +156,8 @@ void receiveJoystickState(int count)
 	{
 		js[c] = Wire.read();
 	}
+
+	Serial.println("Got a joystick");
 }
 
 void doJoystickControl()
@@ -190,6 +195,9 @@ struct AutonomousState
 	{
 		m_mode = s;
 		m_timeLeftInMode = howLongMs;
+
+		Serial.print("Going to state ");
+		Serial.println(m_mode);
 	}
 
 	void tick()
@@ -197,6 +205,11 @@ struct AutonomousState
 		unsigned long curMillis = millis();
 		m_timeLeftInMode -= curMillis - m_lastMillis;
 		m_lastMillis = curMillis;
+	}
+
+	AutonomousState()
+	{
+		m_mode = DRIVING_FORWARD;
 	}
 
 } s_autonomousState;
@@ -210,7 +223,7 @@ void autonomouse_mode(Servo* servo)
   {
 	  // We're about to hit a wall; see if we can escape
 	  servo->write(0);
-	  delay(50);
+	  delay(250);
 	  distance = read_distance();
 	  if(distance > CLOSENESS_THRESHOLD)
 	  {
@@ -220,7 +233,7 @@ void autonomouse_mode(Servo* servo)
 	  else
 	  {
 		  servo->write(170);
-		  delay(50);
+		  delay(250);
 		  distance = read_distance();
 		  if(distance > CLOSENESS_THRESHOLD)
 		  {
@@ -236,9 +249,9 @@ void autonomouse_mode(Servo* servo)
 	  }
   }
 
-  if(s_autonomousState.m_mode == AutonomousState::TURNING_RIGHT || s_autonomousState.m_mode == AutonomousState::TURNING_RIGHT)
+  if(s_autonomousState.m_mode == AutonomousState::TURNING_RIGHT || s_autonomousState.m_mode == AutonomousState::TURNING_LEFT)
   {
-	  if(s_autonomousState.m_timeLeftInMode < 0)
+	  if(s_autonomousState.m_timeLeftInMode < 0 || distance > 100)
 	  {
 		  servo->write(70);
 		  s_autonomousState.goToState(AutonomousState::DRIVING_FORWARD);
@@ -267,12 +280,19 @@ void loop()
 	// Toggle between self-driving and joystick control when the button is pressed
 	// defaulting to self-driving mode when we power on, in case a joystick is not connected.
 	static bool autonomousMode = true;
+	bool allowSwitchingBetweenRemoteControlAndAutonomous = false;
+
+	if(allowSwitchingBetweenRemoteControlAndAutonomous)
 	{
 		static int lastButtonState = 0;
 		if(s_joystick.m_button && s_joystick.m_button != lastButtonState)
 		{
 			autonomousMode = !autonomousMode;
+
+			Serial.print(autonomousMode ? "Entering" : "Exiting");
+			Serial.print(" autonomous mode");
 		}
+		lastButtonState = s_joystick.m_button;
 	}
 
 	if(autonomousMode)
