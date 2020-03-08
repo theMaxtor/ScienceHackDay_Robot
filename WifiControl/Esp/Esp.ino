@@ -14,14 +14,11 @@ struct JoyState
 	int32_t m_leftRight;
 	int32_t m_upDown;
 	int32_t m_button;
-} s_joystick;
+} s_joystick = {0};
 const int MAX_VAL = 512;
 
 void setup()
 {
-	s_joystick.m_leftRight = -100;
-	s_joystick.m_upDown = 444;
-
 	Serial.begin(9600);
 	Serial.write("Starting up\n");
 	g_wifi.addAP("WIFI NAME", "WIFI PASSWORD");
