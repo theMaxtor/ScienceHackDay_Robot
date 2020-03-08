@@ -230,6 +230,7 @@ void autonomouse_mode(Servo* servo)
 		  else
 		  {
 			  // Neither left nor right were clear
+			  servo->write(70);
 			  s_autonomousState.goToState(AutonomousState::DRIVING_BACKWARD);
 		  }
 	  }
@@ -239,6 +240,7 @@ void autonomouse_mode(Servo* servo)
   {
 	  if(s_autonomousState.m_timeLeftInMode < 0)
 	  {
+		  servo->write(70);
 		  s_autonomousState.goToState(AutonomousState::DRIVING_FORWARD);
 	  }
   }
