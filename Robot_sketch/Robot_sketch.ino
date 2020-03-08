@@ -10,7 +10,7 @@
 #include <Servo.h> 
 #include <Wire.h>
 
-int toogle = 0;
+int toggle = 0;
 
 struct JoyState
 {
@@ -226,7 +226,6 @@ void loop()
 	if(autonomousMode)
 	{
 		autonomouse_mode(&Servo1);
-
 	}
 	else
 	{
