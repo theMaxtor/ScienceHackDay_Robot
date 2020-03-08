@@ -174,40 +174,90 @@ void doJoystickControl()
 	}
 }
 
+struct AutonomousState
+{
+	enum State
+	{
+		DRIVING_FORWARD,
+		DRIVING_BACKWARD,
+		TURNING_LEFT,
+		TURNING_RIGHT,
+	} m_mode;
+
+	unsigned long m_timeLeftInMode;
+	unsigned long m_lastMillis;
+	void goToState(State s, int howLongMs = 600)
+	{
+		m_mode = s;
+		m_timeLeftInMode = howLongMs;
+	}
+
+	void tick()
+	{
+		unsigned long curMillis = millis();
+		m_timeLeftInMode -= curMillis - m_lastMillis;
+		m_lastMillis = curMillis;
+	}
+
+} s_autonomousState;
+
 void autonomouse_mode(Servo* servo)
 {
   distance = read_distance();
-  if (distance > 20)
+
+  const int CLOSENESS_THRESHOLD = 20;
+  if(s_autonomousState.m_mode == AutonomousState::DRIVING_FORWARD && distance < CLOSENESS_THRESHOLD)
   {
-    setMotors(FORWARD, FORWARD);
+	  // We're about to hit a wall; see if we can escape
+	  servo->write(0);
+	  delay(50);
+	  distance = read_distance();
+	  if(distance > CLOSENESS_THRESHOLD)
+	  {
+		  // Left is clear
+		  s_autonomousState.goToState(AutonomousState::TURNING_LEFT);
+	  }
+	  else
+	  {
+		  servo->write(170);
+		  delay(50);
+		  distance = read_distance();
+		  if(distance > CLOSENESS_THRESHOLD)
+		  {
+			  // Right is clear
+			  s_autonomousState.goToState(AutonomousState::TURNING_RIGHT);
+		  }
+		  else
+		  {
+			  // Neither left nor right were clear
+			  s_autonomousState.goToState(AutonomousState::DRIVING_BACKWARD);
+		  }
+	  }
   }
-  else
+
+  if(s_autonomousState.m_mode == AutonomousState::TURNING_RIGHT || s_autonomousState.m_mode == AutonomousState::TURNING_RIGHT)
   {
-    servo->write(0);
-    distance = read_distance();
-    if (distance > 20)
-    {
-      setMotors(BACKWARD, FORWARD);
-      delay(600);
-      setMotors(FORWARD, FORWARD);
-    }
-    else 
-    {
-      servo->write(170);
-      distance = read_distance();
-      if (distance > 20)
-      {
-        setMotors(FORWARD, BACKWARD);
-        delay(600);
-        setMotors(FORWARD, FORWARD);
-      }
-      else
-      {
-        setMotors(BACKWARD, BACKWARD);
-      }
-    }
+	  if(s_autonomousState.m_timeLeftInMode < 0)
+	  {
+		  s_autonomousState.goToState(AutonomousState::DRIVING_FORWARD);
+	  }
+  }
+  if(s_autonomousState.m_mode == AutonomousState::DRIVING_BACKWARD)
+  {
+	  if(distance > CLOSENESS_THRESHOLD)
+	  {
+		  // Drove backwards until there was no obstacle, so let's turn left for a little bit
+		  s_autonomousState.goToState(AutonomousState::TURNING_LEFT, 100);
+	  }
   }
   
+  switch(s_autonomousState.m_mode)
+  {
+	  case AutonomousState::DRIVING_FORWARD: setMotors(FORWARD, FORWARD); break;
+	  case AutonomousState::TURNING_LEFT: setMotors(BACKWARD, FORWARD); break;
+	  case AutonomousState::TURNING_RIGHT: setMotors(FORWARD, BACKWARD); break;
+	  case AutonomousState::DRIVING_BACKWARD: setMotors(BACKWARD, BACKWARD); break;
+  };
 }
 
 void loop()
