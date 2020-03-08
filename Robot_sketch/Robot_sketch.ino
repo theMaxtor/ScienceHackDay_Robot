@@ -153,16 +153,11 @@ void receiveJoystickState(int count)
 	}
 }
 
-void loop()
+void doJoystickControl()
 {
 	int x = int(float(s_joystick.m_leftRight + MAX_VAL) / float(MAX_VAL * 2) * 3);
 	int y = int(float(s_joystick.m_upDown + MAX_VAL) / float(MAX_VAL * 2) * 3);
-  Serial.print("y: ");
-  Serial.println(y);
-  Serial.print("x: ");
-  Serial.println(x);
 	int quadrant = x + y * 3;
-	Serial.print(quadrant);
 	switch(quadrant)
 	{
 		case 0: setMotors(STOP, FORWARD); break;
@@ -175,7 +170,29 @@ void loop()
 		case 7: setMotors(BACKWARD, BACKWARD); break;
 		case 8: setMotors(BACKWARD, STOP); break;
 	}
-  
+}
 
-  delay(100);
+void loop()
+{
+  
+	// Toggle between self-driving and joystick control when the button is pressed
+	// defaulting to self-driving mode when we power on, in case a joystick is not connected.
+	static bool autonomousMode = true;
+	{
+		static int lastButtonState = 0;
+		if(s_joystick.m_button && s_joystick.m_button != lastButtonState)
+		{
+			autonomousMode = !autonomousMode;
+		}
+	}
+
+	if(autonomousMode)
+	{
+
+	}
+	else
+	{
+		doJoystickControl();
+	}
+	delay(10);
 }
